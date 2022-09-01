@@ -1,5 +1,6 @@
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_timer.h>
+#include <time.h>
 
 #define WIDTH 800
 #define HEIGHT 600
@@ -20,24 +21,27 @@ enum Colours
 // B {R,G,B,Y}
 // Y {R,G,B,Y}
 double LAWS[COLOURS_COUNT][COLOURS_COUNT] = {
-    { -0.8750413758098341, -0.9867392657262921, 0.1871414571940626, -0.3716655435839973, },
-    { 0.8310654013562320, -0.9446349935348308, -0.3503011480673688, 0.2138385424454876, },
-    { -0.0192168583251614, -0.6107133736883819, 0.7758341160490336, -0.3296555799104532, },
-    { -0.1908757738726566, -0.0931470017382628, 0.5028578664655134, 0.0838339408318671, },
+    { -0.8434895723329343, -0.6863274619385262, 0.2477161014674771, 0.7682225135007046, },
+    { -0.7806103861800443, 0.5859937917375908, -0.3331822023415855, 0.7840017666034409, },
+    { -0.6603008646798789, 0.4897446723141450, 0.9346363153004256, -0.8722016726956711, },
+    { 0.0048405868023822, -0.0538249151100521, -0.9224511049326747, -0.9847266003418372, },
 };
 
-struct Particle
+
+
+typedef struct Particle
 {
 	double x;
 	double y;
 	double vx;
 	double vy;
-};
+} Particle;
 
-struct Particle particles[COLOURS_COUNT][PARTICLES_COUNT];
+Particle particles[COLOURS_COUNT][PARTICLES_COUNT];
 
 void randomise_laws(void)
 {
+	srand(time(NULL));
 	for (int colour_p1 = Red; colour_p1 < COLOURS_COUNT; colour_p1++)
 	{
 		for (int colour_p2 = Red; colour_p2 < COLOURS_COUNT; colour_p2++)
@@ -62,7 +66,7 @@ void print_laws(void)
 	printf("};\n");
 }
 
-void draw_particles(SDL_Renderer *s, struct Particle particles[COLOURS_COUNT][PARTICLES_COUNT])
+void draw_particles(SDL_Renderer *s, Particle particles[COLOURS_COUNT][PARTICLES_COUNT])
 {
 	SDL_Point points[PARTICLES_COUNT];
 	for (int colour = 0; colour < (COLOURS_COUNT); colour++)
@@ -75,16 +79,16 @@ void draw_particles(SDL_Renderer *s, struct Particle particles[COLOURS_COUNT][PA
 		switch (colour)
 		{
 		case Red:
-			SDL_SetRenderDrawColor(s, 0xFF, 0x00, 0x00, 0xFF);
+			SDL_SetRenderDrawColor(s, 0xBF, 0x61, 0x6A, 0xFF);
 			break;
 		case Green:
-			SDL_SetRenderDrawColor(s, 0x00, 0xFF, 0x00, 0xFF);
+			SDL_SetRenderDrawColor(s, 0xA3, 0xBE, 0x8C, 0xFF); 
 			break;
 		case Blue:
-			SDL_SetRenderDrawColor(s, 0x00, 0x00, 0xFF, 0xFF);
+			SDL_SetRenderDrawColor(s, 0x5E, 0x81, 0xAC, 0xFF);
 			break;
 		case Yellow:
-			SDL_SetRenderDrawColor(s, 0xFF, 0xFF, 0x00, 0xFF);
+			SDL_SetRenderDrawColor(s, 0xEB, 0xCB, 0x8B, 0xFF);
 			break;
 		default:
 			break;
@@ -99,7 +103,7 @@ void clear(SDL_Renderer *s, int r, int g, int b)
 	SDL_RenderClear(s);
 }
 
-void update_particles(struct Particle particles[COLOURS_COUNT][PARTICLES_COUNT])
+void update_particles(Particle particles[COLOURS_COUNT][PARTICLES_COUNT])
 {
 	for (int colour_p1 = Red; colour_p1 < COLOURS_COUNT; colour_p1++)
 	{
@@ -121,10 +125,10 @@ void update_particles(struct Particle particles[COLOURS_COUNT][PARTICLES_COUNT])
 						if (dx != 0 || dy != 0)
 						{
 							double d_squared = dx * dx + dy * dy;
-							if (d_squared < 2500)
-							{									// square of the max distance force can act over
+							if (d_squared < 6400)
+							{								    // square of the max distance force can act over
 								double f = g / sqrt(d_squared); // force falls off ∝ 1/d
-								// double f = g / d;  			 // force falls off ∝ 1/d^2
+								//double f = g / d_squared;     // force falls off ∝ 1/d^2
 								fx += f * dx;
 								fy += f * dy;
 							}
@@ -132,8 +136,8 @@ void update_particles(struct Particle particles[COLOURS_COUNT][PARTICLES_COUNT])
 					}
 				}
 			}
-			p1->vx = (p1->vx + fx) * 0.10;
-			p1->vy = (p1->vy + fy) * 0.10;
+			p1->vx = (p1->vx + fx) * 0.15;
+			p1->vy = (p1->vy + fy) * 0.15;
 			p1->x += p1->vx;
 			p1->y += p1->vy;
 			if (p1->x <= 0)
@@ -144,7 +148,7 @@ void update_particles(struct Particle particles[COLOURS_COUNT][PARTICLES_COUNT])
 			if (p1->x >= WIDTH)
 			{
 				p1->vx *= -1;
-				p1->x = WIDTH;
+				p1->x = WIDTH - 1;
 			}
 			if (p1->y <= 0)
 			{
@@ -154,14 +158,15 @@ void update_particles(struct Particle particles[COLOURS_COUNT][PARTICLES_COUNT])
 			if (p1->y >= HEIGHT)
 			{
 				p1->vy *= -1;
-				p1->y = HEIGHT;
+				p1->y = HEIGHT - 1;
 			}
 		}
 	}
 }
 
-void create_particles(struct Particle particles[COLOURS_COUNT][PARTICLES_COUNT])
+void create_particles(Particle particles[COLOURS_COUNT][PARTICLES_COUNT])
 {
+	srand(4);
 	for (int colour = Red; colour < COLOURS_COUNT; colour++)
 	{
 		for (int i = 0; i < PARTICLES_COUNT; i++)
@@ -174,7 +179,7 @@ void create_particles(struct Particle particles[COLOURS_COUNT][PARTICLES_COUNT])
 	}
 }
 
-void reset(struct Particle particles[COLOURS_COUNT][PARTICLES_COUNT])
+void reset(Particle particles[COLOURS_COUNT][PARTICLES_COUNT])
 {
 	create_particles(particles);
 	randomise_laws();
@@ -190,13 +195,13 @@ int main()
 	SDL_Window *win = SDL_CreateWindow("particles", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WIDTH, HEIGHT, 0);
 	Uint32 render_flags = SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC;
 	SDL_Renderer *s = SDL_CreateRenderer(win, -1, render_flags);
-	srand(4);
 	create_particles(particles);
-
 	int quit = 0;
 	SDL_Event event;
 	while (!quit)
-	{
+	{	
+		// Uint64 start = SDL_GetPerformanceCounter();
+
 		while (SDL_PollEvent(&event))
 		{
 			switch (event.type)
@@ -221,11 +226,15 @@ int main()
 		}
 
 		update_particles(particles);
-		clear(s, 0x00, 0x00, 0x00);
+		clear(s, 0x2E, 0x34, 0x40);
 		draw_particles(s, particles);
 
 		SDL_RenderPresent(s);
 		SDL_Delay(1000 / 60);
+
+		// Uint64 end = SDL_GetPerformanceCounter();
+		// float elapsed = (end - start) / (float)SDL_GetPerformanceFrequency();
+		// printf("Current FPS: %0.1f \n" , 1.0f / elapsed);
 	}
 	SDL_DestroyWindow(win);
 	SDL_DestroyRenderer(s);
