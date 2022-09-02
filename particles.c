@@ -1,6 +1,11 @@
-#include <SDL2/SDL.h>
-#include <SDL2/SDL_timer.h>
+#include <stdio.h>
+#include <stdint.h>
+#include <assert.h>
 #include <time.h>
+#include <SDL2/SDL.h>
+#include <SDL2/SDL_opengl.h>
+#include <SDL2/SDL_timer.h>
+#include <GL/gl.h>
 
 #define WIDTH 800
 #define HEIGHT 600
@@ -26,8 +31,6 @@ double LAWS[COLOURS_COUNT][COLOURS_COUNT] = {
     { -0.6603008646798789, 0.4897446723141450, 0.9346363153004256, -0.8722016726956711, },
     { 0.0048405868023822, -0.0538249151100521, -0.9224511049326747, -0.9847266003418372, },
 };
-
-
 
 typedef struct Particle
 {
@@ -188,33 +191,44 @@ void reset(Particle particles[COLOURS_COUNT][PARTICLES_COUNT])
 
 int main()
 {
-	if (SDL_Init(SDL_INIT_EVERYTHING) != 0)
-	{
-		printf("error initializing SDL: %s\n", SDL_GetError());
-	}
-	SDL_Window *win = SDL_CreateWindow("particles", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WIDTH, HEIGHT, 0);
-	Uint32 render_flags = SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC;
-	SDL_Renderer *s = SDL_CreateRenderer(win, -1, render_flags);
-	create_particles(particles);
-	int quit = 0;
-	SDL_Event event;
-	while (!quit)
+	uint32_t WINDOWFLAGS = SDL_WINDOW_OPENGL;
+	SDL_Window *Window = SDL_CreateWindow("particles", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WIDTH, HEIGHT, WINDOWFLAGS);
+	assert(Window);
+	SDL_GLContext Context = SDL_GL_CreateContext(Window);
+  	int32_t Running = 1;
+  	int32_t FullScreen = 0;
+
+	// create_particles(particles);
+
+	while (Running)
 	{	
 		// Uint64 start = SDL_GetPerformanceCounter();
-
-		while (SDL_PollEvent(&event))
+		SDL_Event Event;
+		while (SDL_PollEvent(&Event))
 		{
-			switch (event.type)
+			switch (Event.type)
 			{
 			case SDL_QUIT:
-				quit = 1;
+				Running = 0;
 				break;
 			case SDL_KEYDOWN:
-				switch (event.key.keysym.scancode)
+				switch (Event.key.keysym.scancode)
 				{
 				case SDL_SCANCODE_Q:
 				case SDL_SCANCODE_ESCAPE:
-					quit = 1;
+					Running = 0;
+					break;
+
+				case SDL_SCANCODE_F:
+					FullScreen = !FullScreen;
+					if (FullScreen)
+					{
+						SDL_SetWindowFullscreen(Window, WINDOWFLAGS | SDL_WINDOW_FULLSCREEN_DESKTOP);
+					}
+					else
+					{
+						SDL_SetWindowFullscreen(Window, WINDOWFLAGS);
+					}
 					break;
 				case SDL_SCANCODE_R:
 					reset(particles);
@@ -225,18 +239,22 @@ int main()
 			}
 		}
 
-		update_particles(particles);
-		clear(s, 0x2E, 0x34, 0x40);
-		draw_particles(s, particles);
+		glViewport(0, 0, WIDTH, HEIGHT);
+    	glClearColor(1.f, 0.f, 1.f, 0.f);
+    	glClear(GL_COLOR_BUFFER_BIT);
 
-		SDL_RenderPresent(s);
-		SDL_Delay(1000 / 60);
+    	SDL_GL_SwapWindow(Window);
 
+
+		// update_particles(particles);
+		// draw_particles(s, particles);
+		
 		// Uint64 end = SDL_GetPerformanceCounter();
 		// float elapsed = (end - start) / (float)SDL_GetPerformanceFrequency();
 		// printf("Current FPS: %0.1f \n" , 1.0f / elapsed);
 	}
-	SDL_DestroyWindow(win);
-	SDL_DestroyRenderer(s);
+	SDL_GL_DeleteContext(Context);
+	SDL_DestroyWindow(Window);
 	SDL_Quit();
+	return 0;
 }
