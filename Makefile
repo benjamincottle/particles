@@ -1,8 +1,8 @@
 TARGET = ./particles
 
 CC = clang
-CFLAGS = `sdl2-config --cflags` -O3 -Wall -flto
-LDFLAGS = `sdl2-config --libs` -lGL -lm -flto
+CFLAGS = -O3 -Wall -flto
+LDFLAGS = -lglfw -lGLEW -lGL -lm -flto
 
 .PHONY: default all run clean
 
